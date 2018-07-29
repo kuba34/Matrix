@@ -12,6 +12,7 @@ class Matrix {
     size_t cols;
 
 public:
+    Matrix() = delete;
     explicit Matrix(size_t rows, size_t cols);
     explicit Matrix(size_t n);
     Matrix(const Matrix&);
@@ -24,9 +25,7 @@ public:
     size_t getRows() const;
     size_t getCols() const;
 
-    //TODO: Operators
     Matrix& operator+=(const Matrix& M);
-    
     Matrix& operator=(const Matrix& M);
     Matrix operator+(const Matrix& M);
     Matrix& operator*=(const Matrix& M);
@@ -40,6 +39,10 @@ public:
     std::vector<T> get_row(size_t row) const;
     std::vector<T> get_column(size_t col) const;
 
+    Matrix<T> orthogonal();
+
+    virtual ~Matrix();
+
     //TODO
     T det();
     T trace();
@@ -50,10 +53,6 @@ public:
     void swap_rows(size_t n, size_t m);
     void swap_columns(size_t n, size_t m);
     void resize(size_t n, size_t m);
-
-    Matrix<T> orthogonal();
-
-    virtual ~Matrix();
 };
 
 #include <stdexcept>
@@ -88,7 +87,7 @@ template <typename T>
 Matrix<T>::Matrix(size_t n): Matrix(n,n) {}
 
 template <typename T>
-Matrix<T>::Matrix(const Matrix<T>& M): rows(M.getRows()), cols(M.getCols())
+Matrix<T>::Matrix(const Matrix<T>& M): rows(M.rows), cols(M.cols)
 {
     matrix=new T*[rows];
     for(size_t i=0;i<rows;i++) {
@@ -101,20 +100,8 @@ Matrix<T>::Matrix(const Matrix<T>& M): rows(M.getRows()), cols(M.getCols())
 }
 
 template <typename T>
-Matrix<T>::Matrix(Matrix<T>&& M): rows(M.rows), cols(M.cols)
+Matrix<T>::Matrix(Matrix<T>&& M): matrix(M.matrix), rows(M.rows), cols(M.cols)
 {
-    std::cout << "Move constructor from "
-        << reinterpret_cast<const void*>(&M)
-        << " to " << reinterpret_cast<const void*>(this) << "\n";
-    matrix=new T*[rows];
-    for(size_t i=0;i<rows;i++) {
-        matrix[i]=new T[cols];
-    }
-    for(size_t i=0;i<rows;i++) {
-        for(size_t j=0;j<cols;j++)
-            matrix[i][j]=M[i][j];
-    }
-
     M.rows=0;
     M.cols=0;
     M.matrix=nullptr;
@@ -315,12 +302,24 @@ size_t Matrix<T>::getCols() const
 }
 
 template <typename T>
+void Matrix<T>::swap_rows(size_t n, size_t m)
+{
+    if(n>rows||n<0||m>rows||m<0)
+        throw std::invalid_argument("Argument out of bound");
+
+    auto tmp1=matrix[n];
+    auto tmp2=matrix[m];
+
+    matrix[n]=tmp2;
+    matrix[m]=tmp2;
+}
+
+template <typename T>
 Matrix<T>::~Matrix()
 {
     for(size_t i=0;i<rows;i++)
         delete [] matrix[i];
     delete [] matrix;
-    std::cerr << "Matrix destructor " << reinterpret_cast<const void*>(this) << std::endl;
 }
 
 template <typename T>
