@@ -4,6 +4,8 @@
 #include <vector>
 #include <cstdlib>
 
+using std::size_t;
+
 template <typename T>
 class Matrix {
 
@@ -43,21 +45,22 @@ public:
 
     virtual ~Matrix();
 
+    double det();
+    void swap_rows(size_t n, size_t m);
+    void swap_columns(size_t n, size_t m);
     //TODO
-    T det();
-    T trace();
-    void insert_row(size_t n, T* row);
+    /*void insert_row(size_t n, T* row);
     void insert_row(size_t n, std::vector<T> row);
     void insert_column(size_t n, T* row);
     void insert_column(size_t n, std::vector<T> row);
-    void swap_rows(size_t n, size_t m);
-    void swap_columns(size_t n, size_t m);
     void resize(size_t n, size_t m);
+    Matrix getSubmatrix(size_t x, size_t y);*/
 };
 
 #include <stdexcept>
 #include <iostream>
 #include <iomanip>
+#include <cmath>
 
 template <typename T>
 Matrix<T> Matrix<T>::orthogonal()
@@ -142,7 +145,7 @@ template <typename T>
 Matrix<T> Matrix<T>::operator+(const Matrix& M)
 {
     if(rows!=M.getRows() || cols!=M.getCols())
-        throw std::invalid_argument("Matrixes have different dimentions.");
+        throw std::invalid_argument("Matrixes have different size.");
 
     Matrix<T> N(rows,cols);
 
@@ -158,7 +161,7 @@ template <typename T>
 Matrix<T>& Matrix<T>::operator+=(const Matrix& M)
 {
     if(rows!=M.getRows() || cols!=M.getCols())
-        throw std::invalid_argument("Matrixes have different dimentions.");
+        throw std::invalid_argument("Matrixes have size.");
 
     for(size_t i=0;i<rows;i++) {
         for(size_t j=0;j<cols;j++)
@@ -304,7 +307,7 @@ size_t Matrix<T>::getCols() const
 template <typename T>
 void Matrix<T>::swap_rows(size_t n, size_t m)
 {
-    if(n>rows||n<0||m>rows||m<0)
+    if(n>rows || n<0 || m>rows || m<0)
         throw std::invalid_argument("Argument out of bound");
 
     auto tmp1=matrix[n];
@@ -312,6 +315,37 @@ void Matrix<T>::swap_rows(size_t n, size_t m)
 
     matrix[n]=tmp2;
     matrix[m]=tmp2;
+}
+
+template <typename T>
+double Matrix<T>::det()
+{
+    if(rows!=cols)
+        throw std::domain_error("Matrix isn't square.");
+
+    bool flag=false;
+    auto A=*this;
+    int n=rows;
+    constexpr double eps = 1e-12;
+
+    for(int k = 0; k < n - 1; k++)
+    {
+        if(fabs(A[k][k]) < eps) flag=false;
+        for(int i = k + 1; i < n; i++)
+            A[i][k] /= A[k][k];
+        for(int i = k + 1; i < n; i++)
+            for(int j = k + 1; j < n; j++)
+                A[i][j] -= A[i][k] * A[k][j];
+    }
+    flag=true;
+
+    if(!flag)
+        throw std::domain_error("Cannot divide by zero.");
+
+    det = A[0][0];
+    for(int i=1;i<n;i++)
+        det*=A[i][i];
+    return det;
 }
 
 template <typename T>
@@ -335,6 +369,12 @@ std::ostream& operator<<(std::ostream& Out, Matrix<T>& M)
     }
 
     return Out;
+}
+
+template <typename T>
+Matrix<T> operator*(T s,Matrix<T> &M)
+{
+    return M*s;
 }
 
 #endif // MATRIX_HH
